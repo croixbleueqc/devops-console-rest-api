@@ -9,6 +9,12 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str
 
+    SUPERUSER_USERNAME: EmailStr
+    SUPERUSER_PASSWORD: str
+
+    USERNAME: EmailStr
+    PASSWORD: str
+
     MOCK_USERS = {
         "croix_bleue": {
             "id": 0,
@@ -25,7 +31,6 @@ class Settings(BaseSettings):
             "password": "TomCruiseIsTheBest",
         },
     }
-    SUPERUSER_USERNAME: EmailStr
-    SUPERUSER_PASSWORD: str
+    
 
 settings = Settings(_env_file='.env')
