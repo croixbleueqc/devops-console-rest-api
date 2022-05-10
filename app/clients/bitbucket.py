@@ -1,11 +1,16 @@
 from uuid import UUID
 
-from app import models, server_stubs
-from aiobitbucket import bitbucket as bitbucket_client
+from app import models
+from aiobitbucket.bitbucket import Bitbucket as Bitbucket_Client
+from app.core.config import settings
 
-client = bitbucket_client()
+client = Bitbucket_Client()
 
-def bb_query(fn):
+async def bb_query(fn):
+    client.open_basic_session(settings.USERNAME, settings.PASSWORD)
+    await fn()
+    await client.close_session()
+
 
 
 class BitBucketRESTClient:

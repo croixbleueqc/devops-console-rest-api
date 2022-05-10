@@ -15,7 +15,7 @@ python-multipart = "^0.0.5"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 python-dotenv = "^0.20.0"
-aiobitbucket = {path = "../python-aiobitbucket"}
+aiobitbucket = {git = "https://github.com/croixbleueqc/python-aiobitbucket.git", rev = "fastapi"}
 
 [tool.poetry.dev-dependencies]
 black = {version = "^22.3.0", allow-prereleases = true}
