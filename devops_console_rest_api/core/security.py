@@ -3,7 +3,7 @@ from typing import Any
 from passlib.context import CryptContext
 from jose import jwt
 
-from app.core.config import settings
+from devops_console_rest_api.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import k8s, login, repos
+from devops_console_rest_api.api.v1.endpoints import k8s, login, repos
 
 
 api_router = APIRouter()

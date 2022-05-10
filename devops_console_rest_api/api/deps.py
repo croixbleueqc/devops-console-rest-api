@@ -4,10 +4,10 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
 
-from app.core import security
-from app.core.config import settings
-from app.clients import user_client
-from app.models import UserInDB, TokenPayload
+from devops_console_rest_api.core import security
+from devops_console_rest_api.core.config import settings
+from devops_console_rest_api.clients import user_client
+from devops_console_rest_api.models import UserInDB, TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     # tokenUrl=f"{settings.API_V1_STR}/login/access-token"

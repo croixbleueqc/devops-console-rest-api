@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
-from app import models
-from app.clients import user_client
-from app.core import security
-from app.core.config import settings
+from devops_console_rest_api import models
+from devops_console_rest_api.clients import user_client
+from devops_console_rest_api.core import security
+from devops_console_rest_api.core.config import settings
 
 router = APIRouter()
 

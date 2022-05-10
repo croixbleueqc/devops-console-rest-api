@@ -64,13 +64,6 @@ docker run -it --rm -p 8000:8000 event-horizon-api:local
 In both cases the OpenAPI spec will be viewable at [http://localhost:8000/docs](http://localhost:8000/docs)
 
 
-### Auth (dev)
-
-
-user: cb@qc.croixbleue.ca
-
-password: password
-
 ## Tests
 
 

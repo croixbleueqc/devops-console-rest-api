@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from app.api import deps
+from devops_console_rest_api.api import deps
 
-from app.models.user import UserInDB
+from devops_console_rest_api.models.user import UserInDB
 
 
 router = APIRouter()

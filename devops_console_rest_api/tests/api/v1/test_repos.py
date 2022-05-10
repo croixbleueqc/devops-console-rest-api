@@ -2,7 +2,7 @@ from typing import Dict
 from uuid import uuid4
 from fastapi.testclient import TestClient
 
-from app.core.config import settings
+from devops_console_rest_api.core.config import settings
 
 
 def test_read_repos(client: TestClient, superuser_token_headers: Dict[str, str]):

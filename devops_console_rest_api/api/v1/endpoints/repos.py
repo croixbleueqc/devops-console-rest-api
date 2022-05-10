@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import UUID4
 
-from app.models import Repo, RepoList, UserInDB
-from app.api import deps
-from app.clients import bb_client
+from devops_console_rest_api.models import Repo, RepoList, UserInDB
+from devops_console_rest_api.api import deps
+from devops_console_rest_api.clients import bb_client
 
 client = bb_client
 

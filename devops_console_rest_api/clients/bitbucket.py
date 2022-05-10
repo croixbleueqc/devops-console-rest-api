@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from app import models
+from devops_console_rest_api import models
 from aiobitbucket.bitbucket import Bitbucket as Bitbucket_Client
-from app.core.config import settings
+from devops_console_rest_api.core.config import settings
 
 client = Bitbucket_Client()
 

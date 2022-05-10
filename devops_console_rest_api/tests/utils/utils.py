@@ -1,7 +1,7 @@
 from typing import Dict
 from fastapi.testclient import TestClient
 
-from app.core.config import settings
+from devops_console_rest_api.core.config import settings
 
 def get_superuser_token_headers(client: TestClient) -> Dict[str, str]:
     credentials = {

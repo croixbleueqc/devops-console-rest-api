@@ -1,7 +1,7 @@
 from uuid import UUID
 from pydantic import EmailStr
-from app.models.user import User, UserInDB
-from app.server_stubs import UserServerStub
+from devops_console_rest_api.models.user import User, UserInDB
+from devops_console_rest_api.server_stubs import UserServerStub
 
 
 server = UserServerStub()

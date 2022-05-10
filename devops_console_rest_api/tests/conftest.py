@@ -3,8 +3,8 @@ from typing import Dict, Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.tests.utils.utils import get_superuser_token_headers
+from devops_console_rest_api.main import app
+from devops_console_rest_api.tests.utils.utils import get_superuser_token_headers
 
 
 @pytest.fixture

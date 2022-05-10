@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from pydantic import EmailStr
-from app.core.security import verify_password, get_password_hash
-from app.core.config import settings
-from app.models import User, UserInDB, UserCreate
+from devops_console_rest_api.core.security import verify_password, get_password_hash
+from devops_console_rest_api.core.config import settings
+from devops_console_rest_api.models import User, UserInDB, UserCreate
 
 
 class UserServerStub:
