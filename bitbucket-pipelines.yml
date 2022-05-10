@@ -1,8 +1,0 @@
-options:
-  max-time: 10
-
-pipelines:
-    default:
-      - step: 
-          script: 
-          - echo "No op"
