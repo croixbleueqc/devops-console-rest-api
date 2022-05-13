@@ -12,11 +12,12 @@ router = APIRouter()
 
 
 @router.get("/", tags=["bitbucket"], response_model=RepoList)
-async def read_repos(current_user: UserInDB = Depends(deps.get_current_user)):
-    repos = client.get_repos()
-    if not repos:
-        raise HTTPException(status_code=404, detail="RepoList not found")
-    return repos
+async def read_repos():
+    return RepoList(size=1, values=[Repo(name="test")])
+    # repos = client.get_repos()
+    # if not repos:
+    #     raise HTTPException(status_code=404, detail="RepoList not found")
+    # return repos
 
 
 @router.post("/", tags=["bitbucket"], response_model=Repo)
