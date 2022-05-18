@@ -1,9 +1,12 @@
 import secrets
-from pydantic import BaseSettings, EmailStr, Field
+
+from pydantic import BaseSettings, EmailStr
+from devops_sccs.cache import Cache
 
 
 class Settings(BaseSettings):
     API_V1_STR = "/api/v1"
+    HOOKS_API_STR = "/bitbucketcloud/hooks/repo"
     SECRET_KEY = secrets.token_urlsafe(32)
     ACCESS_TOKEN_TTL: int = 60 * 24 * 7  # 7 days
 
@@ -31,6 +34,12 @@ class Settings(BaseSettings):
             "password": "TomCruiseIsTheBest",
         },
     }
-    
+    INIT_CACHE = {}
 
-settings = Settings(_env_file='.env')
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()  # type: ignore
+
+cache = Cache(settings.INIT_CACHE)
