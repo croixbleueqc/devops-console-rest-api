@@ -77,8 +77,8 @@ class CommitShort(TypedDict):
 class PushChange(BaseModel):
     """References that the push updated"""
 
-    new: ReferenceState | None
-    old: ReferenceState | None
+    new: ReferenceState
+    old: ReferenceState
     links: Dict[str, Link]
     created: bool
     forced: bool

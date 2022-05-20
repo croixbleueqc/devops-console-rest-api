@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Type, TypeVar
+from typing import Dict, List, Literal
 from uuid import UUID
+
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field
 
 

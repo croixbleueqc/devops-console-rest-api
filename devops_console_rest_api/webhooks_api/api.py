@@ -1,8 +1,13 @@
 import logging
 from http import HTTPStatus
 
-from devops_console_rest_api.models.bitbucket import WebhookEventKey
-from devops_console_rest_api.models.webhooks import (
+from aiobitbucket.bitbucket import Bitbucket
+from fastapi import FastAPI, HTTPException, Request
+
+from ..core.config import cache
+from ..core.config import external_config as config
+from ..models.bitbucket import WebhookEventKey
+from ..models.webhooks import (
     PRApprovedEvent,
     PRCreatedEvent,
     PRDeclinedEvent,
@@ -12,9 +17,10 @@ from devops_console_rest_api.models.webhooks import (
     RepoBuildStatusUpdated,
     RepoPushEvent,
 )
-from fastapi import FastAPI, HTTPException, Request
 
 app = FastAPI()
+
+hooks_watcher = Bitbucket()
 
 
 @app.post("/", tags=["webhooks"])
@@ -59,8 +65,27 @@ async def handle_repo_push(event: RepoPushEvent):
     repository = event.repository
     changes = event.push["changes"]
 
+    changesMatter = False
     for change in changes:
+        branchName = change.new.name
+        if branchName in config.cd_branches_accepted:
+            changesMatter = True
+            break
+
+    if not changesMatter:
+        logging.debug(
+            f"branch not in environment accepted : {config.cd_versions_available}"
+        )
         return
+
+    config.hookWatcher.open_basic_session(config.watcherUser, config.watcherPwd)
+    newVersionDeployed = await self._fetch_bitbucket_continuous_deployment_config(
+        repoName, config.hookWatcher
+    )
+    await config.hookWatcher.close_session()
+
+    logging.info(f"handle push detected new version : {newVersionDeployed}")
+    cache["continuousDeploymentConfig"][repository.name] = newVersionDeployed
 
 
 def handle_commit_status_created(event: RepoBuildStatusCreated):

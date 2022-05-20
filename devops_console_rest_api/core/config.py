@@ -1,7 +1,9 @@
+from collections import UserDict
 import secrets
 
-from pydantic import BaseSettings, EmailStr
+from devops_console.config import Config
 from devops_sccs.cache import Cache
+from pydantic import BaseSettings, EmailStr
 
 
 class Settings(BaseSettings):
@@ -43,3 +45,22 @@ class Settings(BaseSettings):
 settings = Settings()  # type: ignore
 
 cache = Cache(settings.INIT_CACHE)
+
+
+class ExternalConfig(UserDict):
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.parse_config(config)
+
+    def parse_config(self, config: dict):
+        self.cd_environments = config["continous_deployment"]["environments"]
+        self.cd_branches_accepted = [env["branch"] for env in self.cd_environments]
+        self.cd_pullrequest_tag = config["continous_deployment"]["pullrequest"]["tag"]
+        self.cd_versions_available = config["continous_deployment"]["pipeline"][
+            "versions_available"
+        ]
+        self.watcher_user = config["watcher"]["user"]
+        self.watcher_pwd = config["watcher"]["pwd"]
+
+
+external_config: ExternalConfig = ExternalConfig({})
