@@ -1,6 +1,5 @@
 import asyncio
 import logging, threading
-import os
 
 import uvicorn
 import uvloop

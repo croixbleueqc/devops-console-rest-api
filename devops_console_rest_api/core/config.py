@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     INIT_CACHE = {}
 
     class Config:
-        env_file = ".env"
+        env_file = None
 
 
 settings = Settings()  # type: ignore
