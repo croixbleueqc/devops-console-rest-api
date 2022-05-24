@@ -53,10 +53,10 @@ class ExternalConfig(UserDict):
         self.parse_config(config)
 
     def parse_config(self, config: dict):
-        self.cd_environments = config["continous_deployment"]["environments"]
+        self.cd_environments = config["continuous_deployment"]["environments"]
         self.cd_branches_accepted = [env["branch"] for env in self.cd_environments]
-        self.cd_pullrequest_tag = config["continous_deployment"]["pullrequest"]["tag"]
-        self.cd_versions_available = config["continous_deployment"]["pipeline"][
+        self.cd_pullrequest_tag = config["continuous_deployment"]["pullrequest"]["tag"]
+        self.cd_versions_available = config["continuous_deployment"]["pipeline"][
             "versions_available"
         ]
         self.watcher_user = config["watcher"]["user"]
