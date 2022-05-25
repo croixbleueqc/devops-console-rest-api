@@ -1,9 +1,9 @@
 from collections import UserDict
 import secrets
+from typing import Any, Dict
 
-from devops_console.config import Config
-from devops_sccs.cache import Cache
 from pydantic import BaseSettings, EmailStr
+from devops_sccs.cache import ThreadsafeCache
 
 
 class Settings(BaseSettings):
@@ -13,9 +13,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_TTL: int = 60 * 24 * 7  # 7 days
 
     ENVIRONMENT: str
-
-    SUPERUSER_USERNAME: EmailStr
-    SUPERUSER_PASSWORD: str
 
     USERNAME: EmailStr
     PASSWORD: str
@@ -36,7 +33,7 @@ class Settings(BaseSettings):
             "password": "TomCruiseIsTheBest",
         },
     }
-    INIT_CACHE = {}
+    INIT_CACHE: Dict[str, Any] = {}
 
     class Config:
         env_file = None
@@ -44,15 +41,16 @@ class Settings(BaseSettings):
 
 settings = Settings()  # type: ignore
 
-cache = Cache(settings.INIT_CACHE)
+cache = ThreadsafeCache(settings.INIT_CACHE)
 
 
-class ExternalConfig(UserDict):
-    def __init__(self, config: dict):
+class ExternalConfig(UserDict[str, str]):
+    def __init__(self, config: Dict[str, str]):
         super().__init__(config)
-        self.parse_config(config)
+        if config:
+            self.parse_config(config)
 
-    def parse_config(self, config: dict):
+    def parse_config(self, config: Dict[str, str]):
         self.cd_environments = config["continuous_deployment"]["environments"]
         self.cd_branches_accepted = [env["branch"] for env in self.cd_environments]
         self.cd_pullrequest_tag = config["continuous_deployment"]["pullrequest"]["tag"]
@@ -61,6 +59,8 @@ class ExternalConfig(UserDict):
         ]
         self.watcher_user = config["watcher"]["user"]
         self.watcher_pwd = config["watcher"]["pwd"]
+        self.vault_secret = config["su"]["vault_secret"]
+        self.vault_mount = config["su"]["vault_mount"]
 
 
 external_config: ExternalConfig = ExternalConfig({})

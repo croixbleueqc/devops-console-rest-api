@@ -1,14 +1,16 @@
 import asyncio
-import logging, threading
+import logging
+import threading
+from typing import Dict
 
 import uvicorn
 import uvloop
-from devops_sccs.cache import Cache
+from devops_sccs.cache import ThreadsafeCache
 from fastapi import FastAPI
 
-from devops_console_rest_api.api.v1.api import api_router
-from devops_console_rest_api.core import config
-from devops_console_rest_api.webhooks_api.api import app as hooks_api
+from .api.v1.api import api_router
+from .core import config
+from .webhooks_api.api import app as hooks_api
 
 
 def init() -> FastAPI:
@@ -28,7 +30,7 @@ def mount_hooks_api(app: FastAPI):
     logging.info("Mounted hooks api")
 
 
-def run_threaded(cfg: dict, cache: Cache, hook_cfg: dict) -> threading.Thread:
+def run_threaded(cfg: Dict[str, str], cache: ThreadsafeCache) -> threading.Thread:
     """Run server in it's own thread. Returns the thread object."""
 
     # override module cache with one supplied by caller
@@ -40,11 +42,11 @@ def run_threaded(cfg: dict, cache: Cache, hook_cfg: dict) -> threading.Thread:
     app = init()
 
     # check if we need to start the hooks server
-    if hook_cfg is not None:
+    if cfg["hook_server"] is not None:
         # TODO use values from hook_cfg
         mount_hooks_api(app)
 
-    def serve(loop):
+    def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)
         try:
             uvicorn.run(app)  # type: ignore
