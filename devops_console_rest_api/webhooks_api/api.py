@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
+from devops_console_rest_api.clients.bitbucket import BitbucketRESTClient
 
-from aiobitbucket.bitbucket import Bitbucket
 from fastapi import FastAPI, HTTPException, Request
 
 from ..core.config import cache
@@ -20,7 +20,7 @@ from ..models.webhooks import (
 
 app = FastAPI()
 
-hooks_watcher = Bitbucket()
+client = BitbucketRESTClient()
 
 
 @app.post("/", tags=["webhooks"])
