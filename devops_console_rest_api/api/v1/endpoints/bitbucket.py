@@ -11,12 +11,13 @@ client = BitbucketRESTClient()
 router = APIRouter()
 
 
-@router.get("/", response_model=List[Repository])
-async def read_repos() -> List[Repository]:
-    repos = await client.get_repos()
-    if not repos:
-        raise HTTPException(status_code=404, detail="RepoList not found")
-    return repos
+@router.get("/")
+async def read_repos():
+    return {"Hello": "world"}
+    # repos = await client.get_repos()
+    # if not repos:
+    #     raise HTTPException(status_code=404, detail="RepoList not found")
+    # return repos
 
 
 @router.post("/", response_model=Repository)

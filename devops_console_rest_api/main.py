@@ -27,10 +27,12 @@ def mount_hooks_api(app: FastAPI):
     # main API prefix (the version) should not affect the webhook endpoint, otherwise
     # we would need to update the urls for all existing subscriptions.
     app.mount(config.environment.HOOKS_API_STR, hooks_api)
-    logging.info("Mounted hooks api")
+    logging.debug("Mounted hooks api")
 
 
-def serve_threaded(cfg: Dict[str, Any], cache: ThreadsafeCache) -> threading.Thread:
+def serve_threaded(
+    cfg: Dict[str, Any], cache: ThreadsafeCache, host="0.0.0.0", port=5001
+) -> threading.Thread:
     """Run server in it's own thread.
     Returns the thread object."""
 
@@ -50,7 +52,7 @@ def serve_threaded(cfg: Dict[str, Any], cache: ThreadsafeCache) -> threading.Thr
     def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)
         try:
-            uvicorn.run(app)  # type: ignore
+            uvicorn.run(app, port=port, log_level=logging.INFO)  # type: ignore
         except RuntimeError:
             logging.debug("FastAPI Server has stopped")
 
