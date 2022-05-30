@@ -1,0 +1,22 @@
+from fastapi import APIRouter
+
+<<<<<<< Updated upstream
+from devops_console_rest_api.api.v1.endpoints import bitbucket, k8s, login
+||||||| constructed merge base
+from devops_console_rest_api.api.v1.endpoints import k8s, login, repos
+=======
+from devops_console_rest_api.api.v1.endpoints import bitbucket, k8s
+>>>>>>> Stashed changes
+
+
+api_router = APIRouter()
+<<<<<<< Updated upstream
+api_router.include_router(login.router, tags=["login"])
+api_router.include_router(bitbucket.router, prefix="/repos", tags=["bitbucket"])
+||||||| constructed merge base
+api_router.include_router(login.router, tags=["login"])
+api_router.include_router(repos.router, prefix="/repos", tags=["bitbucket"])
+=======
+api_router.include_router(bitbucket.router, prefix="/repos", tags=["bitbucket"])
+>>>>>>> Stashed changes
+api_router.include_router(k8s.router, prefix="/k8s", tags=["kubernetes"])

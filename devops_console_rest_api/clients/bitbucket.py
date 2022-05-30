@@ -1,29 +1,40 @@
 from contextlib import asynccontextmanager
-from typing import Callable, List, ParamSpec, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Concatenate,
+    Coroutine,
+    List,
+    ParamSpec,
+    TypeVar,
+)
 from uuid import UUID
 from aiobitbucket.apis.repositories.repository import RepoSlug
 
-from aiobitbucket.bitbucket import Bitbucket as Bitbucket_Client
+from aiobitbucket.bitbucket import Bitbucket
 from devops_console_rest_api.core.config import external_config as config
 from devops_console_rest_api.models.bitbucket import Repository
 
-client = Bitbucket_Client()
-
-P = ParamSpec("P")
-R = TypeVar("R")
+client = Bitbucket()
 
 
 @asynccontextmanager
 async def bitbucket_session_context_manager():
-    await client.open_basic_session(config.watcher_user, config.watcher_pwd)
+    global client
+    client.open_basic_session(config.watcher_user, config.watcher_pwd)
     try:
         yield client
     finally:
         await client.close_session()
 
 
-async def with_bitbucket_session(fn: Callable[P, R]) -> Callable[P, R]:
-    async def diddle(*args: P.args, **kwargs: P.kwargs) -> R:
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+async def with_bitbucket_session(fn):
+    async def diddle(*args, **kwargs):
         async with bitbucket_session_context_manager() as cli:
             return await fn(cli, *args, **kwargs)
 
@@ -53,8 +64,8 @@ class BitbucketRESTClient:
 
     @with_bitbucket_session
     async def fetch_contiuous_deployment_config(
-        self, cli: Bitbucket_Client, repo_name: str
-    ):
+        self, cli: Bitbucket, repo_name: str
+    ) -> List[str]:
         """Fetch a list of deployed versions of a repository."""
 
         repo: RepoSlug = cli.repositories.repo_slug(config.team, repo_name)

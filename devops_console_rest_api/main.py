@@ -6,6 +6,7 @@ from typing import Any, Dict
 import uvicorn
 import uvloop
 from devops_sccs.cache import ThreadsafeCache
+from fastapi import FastAPI
 
 from .api.v1.api import api_router
 from .core import config
@@ -56,3 +57,12 @@ def serve_threaded(cfg: Dict[str, Any], cache: ThreadsafeCache) -> threading.Thr
     # free performance boost (uvloop is already a dependency of fastapi)
     # https://github.com/MagicStack/uvloop
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    thread = threading.Thread(target=serve, args=(asyncio.new_event_loop(),))
+
+    # ensure this thread dies with the main thread
+    thread.daemon = True
+
+    thread.start()
+
+    return thread

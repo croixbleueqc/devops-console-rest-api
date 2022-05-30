@@ -5,7 +5,7 @@ from devops_console_rest_api.clients.bitbucket import BitbucketRESTClient
 from fastapi import FastAPI, HTTPException, Request
 
 from ..core.config import cache
-from ..core.config import external_config as config
+from ..core.config import external_config as external_config
 from ..models.bitbucket import WebhookEventKey
 from ..models.webhooks import (
     PRApprovedEvent,
@@ -68,21 +68,17 @@ async def handle_repo_push(event: RepoPushEvent):
     changesMatter = False
     for change in changes:
         branchName = change.new.name
-        if branchName in config.cd_branches_accepted:
+        if branchName in external_config.cd_branches_accepted:
             changesMatter = True
             break
 
     if not changesMatter:
-        logging.debug(
-            f"branch not in environment accepted : {config.cd_versions_available}"
-        )
+        logging.debug(f"no accepted branches: {external_config.cd_versions_available}")
         return
 
-    config.hookWatcher.open_basic_session(config.watcherUser, config.watcherPwd)
-    newVersionDeployed = await self._fetch_bitbucket_continuous_deployment_config(
-        repoName, config.hookWatcher
+    newVersionDeployed = await client.fetch_contiuous_deployment_config(
+        repo_name=repository.name
     )
-    await config.hookWatcher.close_session()
 
     logging.info(f"handle push detected new version : {newVersionDeployed}")
     cache["continuousDeploymentConfig"][repository.name] = newVersionDeployed
