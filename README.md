@@ -11,8 +11,6 @@ The program expects to find a `.env` file in the project root with the following
 
 ```
 ENVIRONMENT=<development|production>
-SUPERUSER_USERNAME=<any@valid.email>
-SUPERUSER_PASSWORD=<password of your choice>
 ```
 
 
