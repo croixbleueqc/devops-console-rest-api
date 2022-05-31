@@ -55,17 +55,19 @@ class BitbucketRESTClient:
         return None
 
     @with_bitbucket_session
-    def update_repo(self, repo: Repository) -> Repository | None:
+    async def update_repo(self, repo: Repository) -> Repository | None:
         return None
 
     @with_bitbucket_session
-    def delete_repo_by_uuid(self, uuid: UUID) -> None:
+    async def delete_repo_by_uuid(self, uuid: UUID) -> None:
         pass
 
     @with_bitbucket_session
     async def fetch_contiuous_deployment_config(
         self, cli: Bitbucket, repo_name: str
     ) -> List[str]:
+        return []
+        # TODO
         """Fetch a list of deployed versions of a repository."""
 
         repo: RepoSlug = cli.repositories.repo_slug(config.team, repo_name)
