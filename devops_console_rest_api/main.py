@@ -52,7 +52,7 @@ def serve_threaded(
     def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)
         try:
-            uvicorn.run(app, port=port, log_level=logging.DEBUG)  # type: ignore
+            uvicorn.run(app, host=host, port=port, log_level=logging.DEBUG)  # type: ignore
         except RuntimeError:
             logging.debug("FastAPI Server has stopped")
 
