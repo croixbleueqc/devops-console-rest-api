@@ -1,6 +1,5 @@
 import logging
 from http import HTTPStatus
-from devops_console_rest_api.clients.bitbucket import BitbucketRESTClient
 
 from fastapi import FastAPI, HTTPException, Request
 
@@ -19,8 +18,6 @@ from ..models.webhooks import (
 )
 
 app = FastAPI()
-
-client = BitbucketRESTClient()
 
 
 @app.post("/", tags=["webhooks"])
@@ -61,27 +58,6 @@ async def handle_webhook_event(request: Request):
 async def handle_repo_push(event: RepoPushEvent):
     """Compare hook data to cached values and update cache accordingly."""
     logging.info('Handling "repo:push" webhook event')
-
-    repository = event.repository
-    changes = event.push["changes"]
-
-    changesMatter = False
-    for change in changes:
-        branchName = change.new.name
-        if branchName in external_config.cd_branches_accepted:
-            changesMatter = True
-            break
-
-    if not changesMatter:
-        logging.debug(f"no accepted branches: {external_config.cd_versions_available}")
-        return
-
-    newVersionDeployed = await client.fetch_contiuous_deployment_config(
-        repo_name=repository.name
-    )
-
-    logging.info(f"handle push detected new version : {newVersionDeployed}")
-    cache["continuousDeploymentConfig"][repository.name] = newVersionDeployed
 
 
 def handle_commit_status_created(event: RepoBuildStatusCreated):

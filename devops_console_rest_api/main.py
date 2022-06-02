@@ -30,14 +30,9 @@ def mount_hooks_api(app: FastAPI):
     logging.debug("Mounted hooks api")
 
 
-def serve_threaded(
-    cfg: Dict[str, Any], cache: ThreadsafeCache, host="0.0.0.0", port=5001
-) -> threading.Thread:
+def serve_threaded(cfg: Dict[str, Any]) -> threading.Thread:
     """Run server in it's own thread.
     Returns the thread object."""
-
-    # override module cache with one supplied by caller
-    config.cache = cache
 
     config.external_config = config.flatten_external_config(cfg)
 
@@ -52,7 +47,7 @@ def serve_threaded(
     def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)
         try:
-            uvicorn.run(app, host=host, port=port, log_level=logging.DEBUG)  # type: ignore
+            uvicorn.run(app, host="0.0.0.0", port=5001, log_level=logging.DEBUG)
         except RuntimeError:
             logging.debug("FastAPI Server has stopped")
 
