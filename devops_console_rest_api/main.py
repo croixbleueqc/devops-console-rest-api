@@ -1,22 +1,25 @@
 import asyncio
 import logging
+import os
 import threading
-from typing import Any, Dict
 
 import uvicorn
 import uvloop
-from devops_sccs.cache import ThreadsafeCache
 from fastapi import FastAPI
 
 from .api.v1.api import api_router
-from .core import config
+from .client import setup_bb_client
+from .config import config
+from .core.environment import environment
 from .webhooks_api.api import app as hooks_api
 
 
 def init() -> FastAPI:
+    """Initialize the FastAPI server."""
+
     app = FastAPI()
 
-    app.include_router(api_router, prefix=config.environment.API_V1_STR)
+    app.include_router(api_router, prefix=environment.API_V1_STR)
 
     return app
 
@@ -26,28 +29,35 @@ def mount_hooks_api(app: FastAPI):
     # its own path operations. This reflects the concern that a change to Event-Horizon's
     # main API prefix (the version) should not affect the webhook endpoint, otherwise
     # we would need to update the urls for all existing subscriptions.
-    app.mount(config.environment.HOOKS_API_STR, hooks_api)
+    app.mount(environment.HOOKS_API_STR, hooks_api)
     logging.debug("Mounted hooks api")
 
 
-def serve_threaded(cfg: Dict[str, Any]) -> threading.Thread:
+def serve_threaded(cfg, core_sccs) -> threading.Thread:
     """Run server in it's own thread.
     Returns the thread object."""
 
-    config.external_config = config.flatten_external_config(cfg)
+    global config
+    config = cfg
 
-    # initialize app
+    setup_bb_client(core_sccs)
+
     app = init()
 
     # check if we need to start the hooks server
-    if cfg["hook_server"] is not None:
+    if cfg["sccs"]["hook_server"] is not None:
         # TODO use values from hook_cfg
         mount_hooks_api(app)
 
     def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)
         try:
-            uvicorn.run(app, host="0.0.0.0", port=5001, log_level=logging.DEBUG)
+            uvicorn.run(
+                app=app,
+                host=cfg["sccs"]["hook_server"]["host"],
+                port=cfg["sccs"]["hook_server"]["port"],
+                log_level=int(os.environ.get("LOGGING_LEVEL", logging.DEBUG)),
+            )
         except RuntimeError:
             logging.debug("FastAPI Server has stopped")
 

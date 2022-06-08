@@ -3,8 +3,6 @@ from http import HTTPStatus
 
 from fastapi import FastAPI, HTTPException, Request
 
-from ..core.config import cache
-from ..core.config import external_config as external_config
 from ..models.bitbucket import WebhookEventKey
 from ..models.webhooks import (
     PRApprovedEvent,
