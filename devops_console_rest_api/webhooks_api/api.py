@@ -1,5 +1,7 @@
 import logging
 from http import HTTPStatus
+from devops_console_rest_api.client import bitbucket_client as client
+from devops_console_rest_api.config import config
 
 from fastapi import FastAPI, HTTPException, Request
 
@@ -18,12 +20,12 @@ from ..models.webhooks import (
 app = FastAPI()
 
 
-@app.post("/", tags=["webhooks"])
+@app.post("/", tags=["bitbucket_webhooks"])
 async def handle_webhook_event(request: Request):
     """Handle a webhook event."""
 
     event_key = request.headers["X-Event-Key"]
-    logging.info(f'Called handle_webhook_event with event key "{event_key}"')
+    logging.info(f'Receive webhook with event key "{event_key}"')
 
     body = await request.json()
 
@@ -46,7 +48,7 @@ async def handle_webhook_event(request: Request):
             return handle_pr_merged(event=PRMergedEvent(**body))
         case _:
             msg = (f"Unsupported event key: {event_key}",)
-            logging.warning(msg)
+            logging.warn(msg)
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail=msg,
@@ -55,7 +57,27 @@ async def handle_webhook_event(request: Request):
 
 async def handle_repo_push(event: RepoPushEvent):
     """Compare hook data to cached values and update cache accordingly."""
+
     logging.info('Handling "repo:push" webhook event')
+
+    # determine if the push event touches any of the cached values
+    changes_matter = False
+    for push_change in event.push["changes"]:
+        if (
+            push_change.new.type == "branch"
+            and push_change.new.name in client.cd_branches_accepted
+        ):
+            changes_matter = True
+            break
+
+    # if the push event doesn't touch any of the cached values, we can skip it
+    if not changes_matter:
+        logging.info("Push event doesn't touch any of the cached values")
+        return
+
+    # if it does, we need to update the cache
+    logging.info("Push event touches cached values, updating cache")
+    # TODO: implement this
 
 
 def handle_commit_status_created(event: RepoBuildStatusCreated):

@@ -9,8 +9,7 @@ from fastapi import FastAPI
 
 from .api.v1.api import api_router
 from .client import setup_bb_client
-from .config import config
-from .core.environment import environment
+from .config import API_V1_STR, HOOKS_API_STR, config
 from .webhooks_api.api import app as hooks_api
 
 
@@ -19,7 +18,7 @@ def init() -> FastAPI:
 
     app = FastAPI()
 
-    app.include_router(api_router, prefix=environment.API_V1_STR)
+    app.include_router(api_router, prefix=API_V1_STR)
 
     return app
 
@@ -29,7 +28,7 @@ def mount_hooks_api(app: FastAPI):
     # its own path operations. This reflects the concern that a change to Event-Horizon's
     # main API prefix (the version) should not affect the webhook endpoint, otherwise
     # we would need to update the urls for all existing subscriptions.
-    app.mount(environment.HOOKS_API_STR, hooks_api)
+    app.mount(HOOKS_API_STR, hooks_api)
     logging.debug("Mounted hooks api")
 
 

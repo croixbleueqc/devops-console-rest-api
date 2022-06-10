@@ -129,24 +129,29 @@ class PaginatedRepositories(BaseModel):
 
 
 class WebhookEventKey(str, Enum):
+    issue_comment_created = "issue:comment_created"
+    issue_comment_updated = "issue:comment_updated"
+    issue_created = "issue:created"
+    issue_updated = "issue:updated"
     pr_approved = "pullrequest:approved"
+    pr_change_request_removed = "pullrequest:changes_request_removed"
+    pr_changes_requested = "pullrequest:changes_request_created"
+    pr_comment_created = "pullrequest:comment_created"
+    pr_comment_deleted = "pullrequest:comment_deleted"
+    pr_comment_updated = "pullrequest:comment_updated"
     pr_created = "pullrequest:created"
-    pr_merged = "pullrequest:fulfilled"
     pr_declined = "pullrequest:rejected"
+    pr_merged = "pullrequest:fulfilled"
+    pr_unapproved = "pullrequest:unapproved"
     pr_updated = "pullrequest:updated"
+    project_updated = "project:updated"
     repo_build_created = "repo:commit_status_created"
     repo_build_updated = "repo:commit_status_updated"
+    repo_commit_comment_created = "repo:commit_comment_created"
+    repo_created = "repo:created"
+    repo_deleted = "repo:deleted"
+    repo_forked = "repo:fork"
+    repo_imported = "repo:imported"
     repo_push = "repo:push"
-
-
-class WebhookSubscription(BitbucketResource, extra=Extra.allow):
-    """A Webhook subscription."""
-
-    uuid: UUID
-    url: AnyHttpUrl
-    description: str
-    subject_type: Literal["repository", "workspace"]
-    subject: BitbucketResource
-    active: bool
-    created_at: datetime
-    events: List[WebhookEventKey] = Field(min_items=1)
+    repo_transfer = "repo:transfer"
+    repo_updated = "repo:updated"

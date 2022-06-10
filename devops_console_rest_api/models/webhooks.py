@@ -4,7 +4,14 @@ from typing import Dict, List, Literal, TypedDict
 from uuid import UUID
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field, HttpUrl
 
-from .bitbucket import BaseCommit, Commit, Link, User
+from .bitbucket import (
+    BaseCommit,
+    BitbucketResource,
+    Commit,
+    Link,
+    User,
+    WebhookEventKey,
+)
 
 
 class PayloadWorkspace(BaseModel):
@@ -168,3 +175,16 @@ class PRDeclinedEvent(PullRequestEvent):
     """A user declines a pull request for a repository. This payload has an event key of pullrequest:rejected"""
 
     pullrequest: PayloadPullRequest
+
+
+class WebhookSubscription(BaseModel, extra=Extra.allow):
+    """A webhook subscription"""
+
+    uuid: UUID
+    url: AnyHttpUrl
+    description: str = ""
+    subject_type: Literal["repository", "workspace", "user", "team"] | None = None
+    subject: BitbucketResource
+    active: bool
+    created_at: datetime
+    events: List[WebhookEventKey] = Field(min_items=1, unique_items=True)
