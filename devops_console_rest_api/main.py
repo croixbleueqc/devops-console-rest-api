@@ -39,7 +39,7 @@ def serve_threaded(cfg, core_sccs) -> threading.Thread:
     global config
     config = cfg
 
-    setup_bb_client(core_sccs)
+    setup_bb_client(config=cfg, core_sccs=core_sccs)
 
     app = init()
 

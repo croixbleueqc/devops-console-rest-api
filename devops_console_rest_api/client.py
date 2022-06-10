@@ -1,7 +1,5 @@
 from functools import partial
-import os
 from typing import Any, Dict
-from .config import config
 
 
 class Client:
@@ -9,19 +7,22 @@ class Client:
 
 
 bitbucket_client = Client()
-vault_bitbucket: Dict[str, Any] = config.get("vault_bitbucket", [])
-
-plugin_id = "cbq"
-admin_session = {
-    "user": vault_bitbucket["username"],
-    "apikey": vault_bitbucket["app_passwords"]["bitbucket_management"],
-    "team": "croixbleue",
-    "author": vault_bitbucket["email"],
-}
 
 # TODO remove need for this; it's an ugly hack to avoid having to refactor the
 #      whole plugin architecture in order to avoid circular imports
-def setup_bb_client(core_sccs) -> None:
+def setup_bb_client(config: Dict[str, Any], core_sccs) -> None:
+    vault_bitbucket: Dict[str, Any] = config.get("vault_bitbucket", {})
+
+    if len(vault_bitbucket) == 0:
+        raise Exception("vault_bitbucket not found in config")
+
+    plugin_id = "cbq"
+    admin_session = {
+        "user": vault_bitbucket["username"],
+        "apikey": vault_bitbucket["app_passwords"]["bitbucket_management"],
+        "team": "croixbleue",
+        "author": vault_bitbucket["email"],
+    }
     global bitbucket_client
 
     # set verbatim methods
