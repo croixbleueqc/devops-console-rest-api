@@ -26,8 +26,8 @@ def setup_bb_client(config: Dict[str, Any], core_sccs) -> None:
     global bitbucket_client
 
     # set verbatim methods
-    setattr(bitbucket_client, "__init__", getattr(core_sccs, "__init__"))
-    setattr(bitbucket_client, "init", getattr(core_sccs, "init"))
+    # setattr(bitbucket_client, "__init__", getattr(core_sccs, "__init__"))
+    # setattr(bitbucket_client, "init", getattr(core_sccs, "init"))
 
     # set curried methods
     for method in [m for m in dir(core_sccs) if callable(getattr(core_sccs, m))]:

@@ -128,6 +128,10 @@ class PaginatedRepositories(BaseModel):
     values: List[Repository]
 
 
+Repository.update_forward_refs()
+BaseCommit.update_forward_refs()
+
+
 class WebhookEventKey(str, Enum):
     issue_comment_created = "issue:comment_created"
     issue_comment_updated = "issue:comment_updated"
