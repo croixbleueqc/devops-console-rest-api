@@ -43,7 +43,7 @@ async def subscribe_all_webhooks():
     subscriptions = []
     for repo in repos:
         current_subscriptions = await client.get_webhook_subscriptions(
-            repo_name=repo._name
+            repo_name=repo.name
         )
 
         async def _subscribe_if_not_set():
