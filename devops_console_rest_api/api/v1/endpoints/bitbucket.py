@@ -25,18 +25,21 @@ async def create_repo(repo: Repository):
     pass
 
 
-@router.get("/subscribe_all_webhooks")
+@router.get("/subscribe_all_webhooks", response_model=List[WebhookSubscription])
 async def subscribe_all_webhooks():
-    """Subscribe to webhooks for each repository (must be idempotent)."""
+    """Subscribe to webhooks for each repository (operation is idempotent)."""
 
+    # TODO extract next line to config
     trigger_events = [WebhookEventKey.repo_push, WebhookEventKey.repo_build_updated]
 
     # get list of repositories
     repos = await client.get_repositories(args=None)
 
-    host = os.environ.get(
-        "HOST", "https://event-horizon-backend-poc.svcnp.canassurance.com"
-    )
+    host = os.environ.get("WEBHOOK_HOST")
+
+    if host is None:
+        raise Exception("WEBHOOK_HOST environment variable is not set")
+
     endpoint = environment.HOOKS_API_STR
     url = urljoin(host, endpoint)
 
@@ -74,7 +77,7 @@ async def update_repo(uuid: UUID4):
     pass
 
 
-@router.get("/by-uuid/{uuid}", response_model=Repository)
+@router.get("/{uuid}", response_model=Repository)
 async def get_repo_by_uuid(uuid: UUID4):
     return await client.get_repository(args={"uuid": uuid})
 

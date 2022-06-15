@@ -10,6 +10,7 @@ class Environment(BaseSettings):
     SECRET_KEY: str = Field(default="super secret key", env="SECRET_KEY")
     BACKEND_CORS_ORIGINS: list[str | AnyHttpUrl] = ["http://localhost:5001"]
     AAD_OPENAPI_CLIENT_ID: str = Field(default="", env="AAD_OPENAPI_CLIENT_ID")
+    AAD_TENANT_ID: str = Field(default="", env="AAD_TENANT_ID")
     AAD_APP_CLIENT_ID: str = Field(default="", env="AAD_APP_CLIENT_ID")
 
     class Config:
