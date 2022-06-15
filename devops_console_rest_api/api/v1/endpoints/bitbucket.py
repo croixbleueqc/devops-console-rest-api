@@ -3,7 +3,7 @@ import os
 from typing import List
 from urllib.parse import urljoin
 from devops_console_rest_api.client import bitbucket_client as client
-from devops_console_rest_api.config import HOOKS_API_STR
+from devops_console_rest_api.config import environment
 from devops_console_rest_api.models.bitbucket import (
     Repository,
     WebhookEventKey,
@@ -37,7 +37,7 @@ async def subscribe_all_webhooks():
     host = os.environ.get(
         "HOST", "https://event-horizon-backend-poc.svcnp.canassurance.com"
     )
-    endpoint = HOOKS_API_STR
+    endpoint = environment.HOOKS_API_STR
     url = urljoin(host, endpoint)
 
     subscriptions = []
