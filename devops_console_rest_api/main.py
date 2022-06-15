@@ -8,18 +8,18 @@ import uvloop
 from fastapi import FastAPI
 
 from .api.v1.api import api_router
-from .client import setup_bb_client
+from .client import setup_clients
 from .config import API_V1_STR, HOOKS_API_STR, config
 from .webhooks_api.api import app as hooks_api
 
 app = FastAPI()
 
 
-def init_app(config, core_sccs):
+def init_app(config, core_sccs, core_k8s):
     """Initialize the FastAPI server."""
     global app
 
-    setup_bb_client(config=config, core_sccs=core_sccs)
+    setup_clients(config=config, core_sccs=core_sccs, core_k8s=core_k8s)
 
     app.include_router(api_router, prefix=API_V1_STR)
 
@@ -41,15 +41,16 @@ def mount_hooks_api(app: FastAPI):
     logging.debug("Mounted hooks api")
 
 
-def serve_threaded(cfg, core_sccs) -> threading.Thread:
-    """Run server in it's own thread. Returns the thread object."""
+def serve_threaded(cfg, core_sccs, core_k8s) -> threading.Thread:
+    """Run server in it's own thread.
+    Returns the thread object."""
 
     global app
     global config
 
     config = cfg
 
-    init_app(config=config, core_sccs=core_sccs)
+    init_app(config=config, core_sccs=core_sccs, core_k8s=core_k8s)
 
     def serve(loop: asyncio.AbstractEventLoop):
         asyncio.set_event_loop(loop)

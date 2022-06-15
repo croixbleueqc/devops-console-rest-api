@@ -4,4 +4,4 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 api_router.include_router(bitbucket.router, prefix="/repos", tags=["bitbucket"])
-api_router.include_router(k8s.router, prefix="/k8s", tags=["kubernetes"])
+api_router.include_router(k8s.router, prefix="/pods", tags=["kubernetes"])
