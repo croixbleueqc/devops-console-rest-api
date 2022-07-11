@@ -1,5 +1,15 @@
-from functools import partial
+from asyncio import AbstractEventLoop
+import asyncio
+from copy import deepcopy
+import functools
+import inspect
+import logging
+import types
 from typing import Any, Dict
+
+from devops_sccs.provision import Provision
+from devops_console_rest_api.config import config
+from requests import session
 
 
 class Client:
@@ -10,7 +20,11 @@ bitbucket_client = Client()
 
 # TODO remove need for this; it's an ugly hack to avoid having to refactor the
 #      whole plugin architecture in order to avoid circular imports
-def setup_bb_client(config: Dict[str, Any], core_sccs) -> None:
+def setup_bb_client(config: Dict[str, Any], core_sccs, loop: AbstractEventLoop) -> None:
+    """
+    Recreate the Bitbucket client with curried methods run in the parent thread.
+    """
+
     vault_bitbucket: Dict[str, Any] = config.get("vault_bitbucket", {})
 
     if len(vault_bitbucket) == 0:
@@ -23,24 +37,43 @@ def setup_bb_client(config: Dict[str, Any], core_sccs) -> None:
         "team": "croixbleue",
         "author": vault_bitbucket["email"],
     }
+
     global bitbucket_client
 
-    # set verbatim methods
-    # setattr(bitbucket_client, "__init__", getattr(core_sccs, "__init__"))
-    # setattr(bitbucket_client, "init", getattr(core_sccs, "init"))
+    async def async_partial(f, *args, **kwargs):
+        result = f(*args, **kwargs)
+        # if inspect.iscoroutinefunction(f):
+        #     result = await result
+        # elif inspect.isasyncgenfunction(f):
+        #     # collect results from async generator
+        #     result = [item async for item in result]
 
-    # set curried methods
-    for method in [m for m in dir(core_sccs) if callable(getattr(core_sccs, m))]:
-        if method.startswith("_") or method == "init":
+        return result
+
+    def threadsafe_async_partial(f, loop):
+        def g(*args, **kwargs):
+            coro = async_partial(
+                f, *args, plugin_id=plugin_id, session=admin_session, **kwargs
+            )
+            future = asyncio.run_coroutine_threadsafe(coro, loop)
+            return future.result(3600)
+
+        return g
+
+    for name, method in inspect.getmembers(core_sccs, inspect.ismethod):
+        if name.startswith("_"):
             continue
-        p = partial(
-            getattr(core_sccs, method), plugin_id=plugin_id, session=admin_session
+        f = threadsafe_async_partial(
+            method,
+            loop=loop,
         )
-
-        setattr(bitbucket_client, str(method), p)
-
-    # set properties
-    for prop in [p for p in dir(core_sccs) if not callable(getattr(core_sccs, p))]:
-        if prop.startswith("_"):
-            continue
-        setattr(bitbucket_client, str(prop), getattr(core_sccs, prop))
+        # f = types.FunctionType(
+        #     threadsafe_async_partial.__code__,
+        #     threadsafe_async_partial.__globals__,
+        #     name=name,
+        #     argdefs=threadsafe_async_partial.__defaults__,
+        #     closure=threadsafe_async_partial.__closure__,
+        # )
+        # f = functools.update_wrapper(f, method)
+        # f.__kwdefaults__ = threadsafe_async_partial.__kwdefaults__
+        setattr(bitbucket_client, name, f)

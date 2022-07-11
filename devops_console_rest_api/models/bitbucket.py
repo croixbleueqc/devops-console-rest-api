@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, TypedDict
 from uuid import UUID
 
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field
@@ -11,7 +11,7 @@ from pydantic import AnyHttpUrl, BaseModel, Extra, Field
 class BitbucketResource(BaseModel, extra=Extra.allow):
     """Base type for most resource objects. It defines the common type element that identifies an object's type"""
 
-    type: str
+    type: str = ""
 
 
 class User(BaseModel):
@@ -52,16 +52,16 @@ class Participant(BitbucketResource):
 
 
 class Project(BitbucketResource):
-    links: Dict[str, Link]
-    uuid: UUID
+    links: Dict[str, Link] = {}
+    uuid: UUID | None
     key: str
-    owner: Account
-    name: str
-    description: str
-    is_private: bool
-    created_on: datetime
-    updated_on: datetime
-    has_publicly_visible_repos: bool
+    owner: Account | None
+    name: str | None
+    description: str = ""
+    is_private: bool = True
+    created_on: datetime | None
+    updated_on: datetime | None
+    has_publicly_visible_repos: bool = False
 
 
 class BaseCommit(BitbucketResource):
@@ -115,6 +115,27 @@ class Repository(BitbucketResource):
     fork_policy: Literal["allow_forks", "no_public_forks", "no_forks"]
     project: Project
     mainbranch: Ref | Branch
+
+
+class ProjectValue(TypedDict):
+    name: str
+    key: str
+
+
+class ConfigOrPrivilegeValue(TypedDict):
+    short: str
+    key: str
+
+
+class RepositoryPost(BaseModel, extra=Extra.allow):
+    """Payload for creating a repository"""
+
+    name: str
+    description: str = ""
+    project: ProjectValue
+    configuration: ConfigOrPrivilegeValue
+    privileges: ConfigOrPrivilegeValue
+    scm = "git"
 
 
 class PaginatedRepositories(BaseModel):
