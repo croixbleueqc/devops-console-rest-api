@@ -1,15 +1,7 @@
 from asyncio import AbstractEventLoop
 import asyncio
-from copy import deepcopy
-import functools
 import inspect
-import logging
-import types
 from typing import Any, Dict
-
-from devops_sccs.provision import Provision
-from devops_console_rest_api.config import config
-from requests import session
 
 
 class Client:
@@ -40,40 +32,27 @@ def setup_bb_client(config: Dict[str, Any], core_sccs, loop: AbstractEventLoop) 
 
     global bitbucket_client
 
-    async def async_partial(f, *args, **kwargs):
-        result = f(*args, **kwargs)
-        # if inspect.iscoroutinefunction(f):
-        #     result = await result
-        # elif inspect.isasyncgenfunction(f):
-        #     # collect results from async generator
-        #     result = [item async for item in result]
-
-        return result
-
     def threadsafe_async_partial(f, loop):
-        def g(*args, **kwargs):
-            coro = async_partial(
-                f, *args, plugin_id=plugin_id, session=admin_session, **kwargs
+        def async_partial(*args, **kwargs):
+            async def g():
+                return f(*args, plugin_id=plugin_id, session=admin_session, **kwargs)
+
+            future = asyncio.run_coroutine_threadsafe(g(), loop)
+            return future.result(60)
+
+        return async_partial
+
+    for name, member in inspect.getmembers(core_sccs):
+        if inspect.ismethod(member) or inspect.isfunction(member):
+            f = threadsafe_async_partial(
+                member,
+                loop=loop,
             )
-            future = asyncio.run_coroutine_threadsafe(coro, loop)
-            return future.result(3600)
+            setattr(bitbucket_client, name, f)
+        # copy over properties from the core sccs client
+        else:
+            if not name.startswith("_"):
+                setattr(bitbucket_client, name, member)
 
-        return g
-
-    for name, method in inspect.getmembers(core_sccs, inspect.ismethod):
-        if name.startswith("_"):
-            continue
-        f = threadsafe_async_partial(
-            method,
-            loop=loop,
-        )
-        # f = types.FunctionType(
-        #     threadsafe_async_partial.__code__,
-        #     threadsafe_async_partial.__globals__,
-        #     name=name,
-        #     argdefs=threadsafe_async_partial.__defaults__,
-        #     closure=threadsafe_async_partial.__closure__,
-        # )
-        # f = functools.update_wrapper(f, method)
-        # f.__kwdefaults__ = threadsafe_async_partial.__kwdefaults__
-        setattr(bitbucket_client, name, f)
+    # let's keep a reference to the event loop so that we can batch api calls later on
+    setattr(bitbucket_client, "loop", loop)
