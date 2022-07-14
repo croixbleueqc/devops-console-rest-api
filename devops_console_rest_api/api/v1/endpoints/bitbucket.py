@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import UUID4
 
 from devops_console_rest_api.client import bitbucket_client as client
@@ -12,66 +13,78 @@ from devops_console_rest_api.config import (
 )
 
 from devops_console_rest_api.models.bitbucket import (
+    Project,
     Repository,
     RepositoryPost,
 )
 from devops_console_rest_api.models.webhooks import WebhookSubscription
+from aiobitbucket.errors import NetworkError
 
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/repos")
 async def read_repos():
-    return await client.get_repositories(args=None)
+    try:
+        return await client.get_repositories(args=None)
+    except NetworkError as e:
+        logging.error(f"Error while getting repositories: {e.details}")
+        raise HTTPException(status_code=e.status, detail=e.details)
 
 
-@router.post("/")
+@router.post("/repos")
 async def create_repo(repo: RepositoryPost):
     """
     Create a new repository (if it doesn't exist) and set the webhooks.
     """
 
     try:
-        responserepo = await client.add_repository(
-            repository=repo.dict(),
-            template="empty-repo-for-applications",
-            template_params=repo.dict(),
-            args=None,
-        )
-    except Exception as e:
-        logging.error(e)
-        raise e
+        responserepo = asyncio.run_coroutine_threadsafe(
+            client.add_repository(
+                repository=repo.dict(),
+                template="empty-repo-for-applications",
+                template_params={},
+                args=None,
+            ),
+            loop=client.loop,
+        ).result(10)
+    except NetworkError as e:
+        logging.error(f"Failed to create repository: {e.details}")
+        raise HTTPException(status_code=e.status, detail=e.details)
 
     if not responserepo:
-        raise Exception("Failed to create repository")
+        raise HTTPException(status_code=400, detail="Failed to create repository")
 
     # Set the default webhook
     try:
-        await client.create_webhook_subscription(
-            repo_name=repo.name,
-            url=WEBHOOKS_URL,
-            active=True,
-            events=WEBHOOKS_DEFAULT_EVENTS,
-            description=WEBHOOKS_DEFAULT_DESCRIPTION,
-            args=None,
+        asyncio.run_coroutine_threadsafe(
+            client.create_webhook_subscription(
+                repo_name=repo.name,
+                url=WEBHOOKS_URL,
+                active=True,
+                events=WEBHOOKS_DEFAULT_EVENTS,
+                description=WEBHOOKS_DEFAULT_DESCRIPTION,
+                args=None,
+            ),
+            client.loop,
         )
-    except Exception as e:
+    except NetworkError as e:
         logging.error(e)
-        raise e
+        raise HTTPException(status_code=e.status, detail=e.details)
 
     return responserepo
 
 
-@router.get("/create_default_webhooks")
+@router.get("/repos/create_default_webhooks")
 async def create_default_webhooks():
     """Subscribe to webhooks for each repository (must be idempotent)."""
 
     # get list of repositories
     try:
         repos = await client.get_repositories(args=None)
-    except Exception as e:
+    except NetworkError as e:
         logging.warn(f"Failed to get list of repositories: {e}")
-        return
+        raise HTTPException(status_code=e.status, detail=e.details)
 
     subscriptions = []
 
@@ -82,21 +95,19 @@ async def create_default_webhooks():
 
     for repo in repos:
 
-        async def _subscribe_if_not_set():
+        async def _subscribe_if_not_set(repo):
+            # get list of webhooks for this repo
             try:
                 current_subscriptions = await client.get_webhook_subscriptions(
                     repo_name=repo.name
                 )
-            except Exception as e:
+            except NetworkError as e:
                 logging.warn(
-                    f"Failed to get webhook subscriptions for {repo.name}: {e}"
+                    f"Failed to get webhook subscriptions for {repo.name}: {e.details}"
                 )
                 return
 
-            logging.warn(
-                f"current_subscriptions for {repo.name}: {current_subscriptions}"
-            )
-
+            # check if the webhook is already set
             if any(
                 [
                     subscription["url"] == WEBHOOKS_URL
@@ -112,6 +123,7 @@ async def create_default_webhooks():
                 logging.warn(f"Webhook subscription already exists for {repo.name}.")
                 return
 
+            # create the webhook
             try:
                 new_subscription = await client.create_webhook_subscription(
                     repo_name=repo.name,
@@ -120,42 +132,45 @@ async def create_default_webhooks():
                     events=WEBHOOKS_DEFAULT_EVENTS,
                     description=WEBHOOKS_DEFAULT_DESCRIPTION,
                 )
-            except Exception as e:
+                logging.warn(f"Subscribed to default webhook for {repo.name}.")
+            except NetworkError as e:
                 logging.warn(
-                    f"Failed to create webhook subscription for {repo.name}: {e}"
+                    f"Failed to create webhook subscription for {repo.name}: {e.details}"
                 )
                 return
 
-            logging.warn(f"Subscribed to default webhook for {repo.name}.")
-
             subscriptions.append(WebhookSubscription(**new_subscription))
 
-        coros.append(_subscribe_if_not_set())
+        coros.append(_subscribe_if_not_set(repo))
 
     await asyncio.gather(*coros)
 
     return subscriptions
 
 
-@router.get("/remove_default_webhooks")
+@router.get("/repos/remove_default_webhooks")
 async def remove_default_webhooks():
     """Remove the default webhooks from all repositories."""
 
     # get list of repositories
-    repos = await client.get_repositories(args=None)
+    try:
+        repos = await client.get_repositories(args=None)
+    except NetworkError as e:
+        logging.warn(f"Failed to get list of repositories: {e.details}")
+        return
 
     coros = []
 
     for repo in repos:
 
-        async def _remove_default_webhooks():
+        async def _remove_default_webhooks(repo):
             try:
                 current_subscriptions = await client.get_webhook_subscriptions(
                     repo_name=repo.name
                 )
-            except Exception as e:
+            except NetworkError as e:
                 logging.warn(
-                    f"Failed to get webhook subscriptions for {repo.name}: {e}"
+                    f"Failed to get webhook subscriptions for {repo.name}: {e.details}"
                 )
                 return
 
@@ -174,34 +189,52 @@ async def remove_default_webhooks():
                             subscription_id=subscription["uuid"],
                         )
                         logging.warn(f"Deleted webhook subscription for {repo.name}.")
-                    except Exception as e:
+                    except NetworkError as e:
                         logging.warn(
-                            f"Failed to delete webhook subscription for {repo.name}: {e}"
+                            f"Failed to delete webhook subscription for {repo.name}: {e.details}"
                         )
                         continue
 
             logging.info(f"Removed default webhooks from {repo.name}.")
 
-        coros.append(_remove_default_webhooks())
+        coros.append(_remove_default_webhooks(repo))
 
     await asyncio.gather(*coros)
 
 
-@router.put("/{uuid}", response_model=Repository)
+@router.put("/repos/{uuid}", response_model=Repository)
 async def update_repo(uuid: UUID4):
     pass
 
 
-@router.get("/by-uuid/{uuid}", response_model=Repository)
+@router.delete("/{repo_name}", status_code=204)
+async def delete_repo(repo_name: str):
+    try:
+        await client.delete_repository(repo_name=repo_name)
+    except NetworkError as e:
+        logging.error(f"Failed to delete repository: {e.details}")
+        raise HTTPException(status_code=e.status, detail=e.details)
+
+
+@router.get("/repos/by-uuid/{uuid}", response_model=Repository)
 async def get_repo_by_uuid(uuid: UUID4):
     return await client.get_repository(args={"uuid": uuid})
 
 
-@router.get("/by-name/{name}", response_model=Repository)
+@router.get("/repos/by-name/{name}", response_model=Repository)
 async def get_repo_by_name(name: str):
     return await client.get_repository(repository=name, args=None)
 
 
-@router.delete("/{uuid}", status_code=204)
-async def delete_repo(uuid: UUID4):
-    pass
+# ------------------------------------------------------------------------------
+# Projects
+# ------------------------------------------------------------------------------
+
+
+@router.get("/projects", response_model=List[Project])
+async def get_projects():
+    try:
+        return await client.get_projects()
+    except NetworkError as e:
+        logging.error(f"Failed to get list of projects: {e.details}")
+        raise HTTPException(status_code=e.status, detail=e.details)
