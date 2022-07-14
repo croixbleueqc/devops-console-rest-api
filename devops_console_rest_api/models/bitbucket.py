@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal, Optional, TypedDict
+from typing import Dict, Generic, List, Literal, Optional, Type, TypeVar, TypedDict
 from uuid import UUID
 
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field
+from pydantic.generics import GenericModel
 
 
 class BitbucketResource(BaseModel, extra=Extra.allow):
@@ -20,7 +21,7 @@ class User(BaseModel):
 
 
 class Link(BaseModel):
-    name: str
+    name: str | None
     href: AnyHttpUrl
 
 
@@ -29,13 +30,13 @@ class Account(BitbucketResource):
 
     links: Dict[str, Link]
     username: str = Field(regex=r"^[a-zA-Z0-9_\-]+$")
-    nickname: str
+    nickname: str | None
     account_status = "active"
     display_name: str
-    website: str
-    created_on: datetime
+    website: str | None
+    created_on: datetime | None
     uuid: UUID
-    has_2fa_enabled: bool
+    has_2fa_enabled: bool | None
 
 
 class Author(BitbucketResource):
@@ -136,6 +137,20 @@ class RepositoryPost(BaseModel, extra=Extra.allow):
     configuration: ConfigOrPrivilegeValue
     privileges: ConfigOrPrivilegeValue
     scm = "git"
+
+
+R = TypeVar("R", bound=BitbucketResource)
+
+
+class Paginated(GenericModel, Generic[R]):
+    """A paginated object"""
+
+    size: int
+    page: int
+    pagelen: int
+    next: Optional[AnyHttpUrl]
+    previous: Optional[AnyHttpUrl]
+    values: List[R]
 
 
 class PaginatedRepositories(BaseModel):
