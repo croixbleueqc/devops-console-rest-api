@@ -76,7 +76,8 @@ async def handle_repo_push(event: RepoPushEvent):
 
     # if it does, we need to update the cache
     logging.info("Push event touches cached values, updating cache")
-    # TODO: implement this
+    await client.get_repository.clear_cache()
+    # TODO: update more than just this function
 
 
 def handle_commit_status_created(event: RepoBuildStatusCreated):

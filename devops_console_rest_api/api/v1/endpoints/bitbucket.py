@@ -26,7 +26,7 @@ router = APIRouter()
 @router.get("/repos")
 async def read_repos():
     try:
-        return await client.get_repositories(args=None)
+        return await client.get_repositories()
     except NetworkError as e:
         logging.error(f"Error while getting repositories: {e.details}")
         raise HTTPException(status_code=e.status, detail=e.details)
@@ -81,7 +81,7 @@ async def create_default_webhooks():
 
     # get list of repositories
     try:
-        repos = await client.get_repositories(args=None)
+        repos = await client.get_repositories()
     except NetworkError as e:
         logging.warn(f"Failed to get list of repositories: {e}")
         raise HTTPException(status_code=e.status, detail=e.details)
@@ -154,7 +154,7 @@ async def remove_default_webhooks():
 
     # get list of repositories
     try:
-        repos = await client.get_repositories(args=None)
+        repos = await client.get_repositories()
     except NetworkError as e:
         logging.warn(f"Failed to get list of repositories: {e.details}")
         return
@@ -223,7 +223,7 @@ async def get_repo_by_uuid(uuid: UUID4):
 
 @router.get("/repos/by-name/{name}", response_model=Repository)
 async def get_repo_by_name(name: str):
-    return await client.get_repository(repository=name, args=None)
+    return await client.get_repository(repository=name)
 
 
 # ------------------------------------------------------------------------------
