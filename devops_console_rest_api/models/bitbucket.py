@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional, TypedDict
 from uuid import UUID
 
 from pydantic import AnyHttpUrl, BaseModel, Extra, Field
@@ -11,10 +11,10 @@ from pydantic import AnyHttpUrl, BaseModel, Extra, Field
 class BitbucketResource(BaseModel, extra=Extra.allow):
     """Base type for most resource objects. It defines the common type element that identifies an object's type"""
 
-    type: str
+    type: str = ""
 
 
-class User(BaseModel, extra=Extra.allow):
+class User(BaseModel):
     is_staff: bool
     account_id: str
 
@@ -24,7 +24,7 @@ class Link(BaseModel):
     href: AnyHttpUrl
 
 
-class Account(BitbucketResource, extra=Extra.allow):
+class Account(BitbucketResource):
     """An account object"""
 
     links: Dict[str, Link]
@@ -38,12 +38,12 @@ class Account(BitbucketResource, extra=Extra.allow):
     has_2fa_enabled: bool
 
 
-class Author(BitbucketResource, extra=Extra.allow):
+class Author(BitbucketResource):
     raw: str
     user: Account
 
 
-class Participant(BitbucketResource, extra=Extra.allow):
+class Participant(BitbucketResource):
     user: Account | User
     role: Literal["PARTICIPANT", "REVIEWER"]
     approved: bool
@@ -51,34 +51,34 @@ class Participant(BitbucketResource, extra=Extra.allow):
     participated_on: datetime
 
 
-class Project(BitbucketResource, extra=Extra.allow):
-    links: Dict[str, Link]
-    uuid: UUID
+class Project(BitbucketResource):
+    links: Dict[str, Link] = {}
+    uuid: UUID | None
     key: str
-    owner: Account
-    name: str
-    description: str
-    is_private: bool
-    created_on: datetime
-    updated_on: datetime
-    has_publicly_visible_repos: bool
+    owner: Account | None
+    name: str | None
+    description: str = ""
+    is_private: bool = True
+    created_on: datetime | None
+    updated_on: datetime | None
+    has_publicly_visible_repos: bool = False
 
 
-class BaseCommit(BitbucketResource, extra=Extra.allow):
+class BaseCommit(BitbucketResource):
     hash: str = Field(regex=r"^[0-9a-f]{7,}?$")
     date: datetime
     author: Author
     message: str
     summary: BitbucketResource
-    parents: List[BaseCommit] = []
+    parents: "List[BaseCommit]" = []
 
 
-class Commit(BitbucketResource, extra=Extra.allow):
-    repository: Repository
+class Commit(BitbucketResource):
+    repository: "Repository"
     participants: List[Participant] = []
 
 
-class Ref(BitbucketResource, extra=Extra.allow):
+class Ref(BitbucketResource):
     links: Dict[str, Link] = {}
     name: str
     target: BaseCommit | Commit
@@ -90,19 +90,19 @@ class MergeStrategy(str, Enum):
     fast_forward = "fast_forward"
 
 
-class Branch(BitbucketResource, extra=Extra.allow):
+class Branch(BitbucketResource):
     merge_strategies: List[MergeStrategy] = []
     default_merge_strategy: MergeStrategy
 
 
-class Repository(BitbucketResource, extra=Extra.allow):
+class Repository(BitbucketResource):
     """A Bitbucket repository"""
 
     links: Dict[str, Link]
     uuid: UUID
     full_name: str
     is_private: bool
-    parent: Repository | None = None
+    parent: "Optional[Repository]" = None
     scm = "git"
     owner: Account
     name: str
@@ -115,6 +115,27 @@ class Repository(BitbucketResource, extra=Extra.allow):
     fork_policy: Literal["allow_forks", "no_public_forks", "no_forks"]
     project: Project
     mainbranch: Ref | Branch
+
+
+class ProjectValue(TypedDict):
+    name: str
+    key: str
+
+
+class ConfigOrPrivilegeValue(TypedDict):
+    short: str
+    key: str
+
+
+class RepositoryPost(BaseModel, extra=Extra.allow):
+    """Payload for creating a repository"""
+
+    name: str
+    description: str = ""
+    project: ProjectValue
+    configuration: ConfigOrPrivilegeValue
+    privileges: ConfigOrPrivilegeValue
+    scm = "git"
 
 
 class PaginatedRepositories(BaseModel):
@@ -155,3 +176,8 @@ class WebhookEventKey(str, Enum):
     repo_push = "repo:push"
     repo_transfer = "repo:transfer"
     repo_updated = "repo:updated"
+
+
+BaseCommit.update_forward_refs()
+Commit.update_forward_refs()
+Repository.update_forward_refs()

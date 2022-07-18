@@ -1,7 +1,6 @@
 import logging
 from http import HTTPStatus
 from devops_console_rest_api.client import bitbucket_client as client
-from devops_console_rest_api.config import config
 
 from fastapi import FastAPI, HTTPException, Request
 
