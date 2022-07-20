@@ -3,8 +3,10 @@ import asyncio
 import inspect
 from typing import Any, Dict
 
+from devops_sccs.plugins.bitbucketcloud import BitbucketCloud
 
-class Client:
+
+class Client(BitbucketCloud):
     pass
 
 
