@@ -137,6 +137,12 @@ class RepositoryPost(BaseModel, extra=Extra.allow):
     scm = "git"
 
 
+class RepositoryPut(RepositoryPost):
+    """Payload for updating a repository"""
+
+    pass
+
+
 class PaginatedRepositories(BaseModel):
     """A paginated list of repositories"""
 

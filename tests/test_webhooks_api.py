@@ -1,25 +1,12 @@
 import json
 from http import HTTPStatus
 
-import pytest
-from devops_console_rest_api.client import bitbucket_client
 from devops_console_rest_api.models.webhooks import WebhookEventKey
 from devops_console_rest_api.webhooks_api.api import app
 from fastapi.testclient import TestClient
-from devops_sccs.atscached import atscached
 
 from . import fixtures
-
-
-@pytest.fixture
-def mock_bitbucket_client(monkeypatch):
-    @atscached()
-    async def mock_get_repository(event):
-        return "success"
-
-    monkeypatch.setattr(bitbucket_client, "get_repository", mock_get_repository)
-    setattr(bitbucket_client, "cd_branches_accepted", ["test"])
-    monkeypatch.setattr(bitbucket_client, "cd_branches_accepted", ["test"])
+from .fixtures import mock_bitbucket_client
 
 
 client = TestClient(app)

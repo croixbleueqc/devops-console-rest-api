@@ -1,6 +1,20 @@
 from datetime import datetime, timedelta
+import types
 from uuid import uuid4
+from devops_sccs.atscached import atscached
 
+import pytest
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Mock Bitbucket API resources
+#
+# Payloads follow the structures defined in the Bitbucket API
+# https://developer.atlassian.com/cloud/bitbucket/rest/intro/
+# See also pydantic models defined in devops_console_rest_api/models/*
+#
+# ----------------------------------------------------------------------------------------------------------------------
+# Webhooks API payloads
+# ----------------------------------------------------------------------------------------------------------------------
 
 mock_user = {
     "is_staff": False,
@@ -105,3 +119,118 @@ mock_prapprovedevent = {}
 mock_prdeclinedevent = {}
 
 mock_prmergedevent = {}
+
+# ----------------------------------------------------------------------------------------------------------------------
+# API payloads
+# ----------------------------------------------------------------------------------------------------------------------
+
+mock_project = {
+    "key": "test",
+}
+
+mock_projectvalue = {
+    "name": "test",
+    "key": "test",
+}
+
+mock_configorprivilegevalue = {
+    "short": "test",
+    "key": "test",
+}
+
+mock_repositorypost = {
+    "name": "test",
+    "project": mock_projectvalue,
+    "configuration": mock_configorprivilegevalue,
+    "priviledges": mock_configorprivilegevalue,
+}
+
+mock_repositoryput = {
+    **mock_repositorypost,
+}
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Mock Bitbucket Client
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_bitbucket_client(monkeypatch):
+    from devops_console_rest_api.client import bitbucket_client
+
+    @atscached()
+    async def get_repository():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client, "get_repository", get_repository, raising=False
+    )
+    # raising=False to avoid raising an exception if the attr is not found
+    # (which will be the case with our hacky runtime client)
+
+    @atscached()
+    async def get_repositories():
+        return ["mock success"]
+
+    monkeypatch.setattr(
+        bitbucket_client, "get_repositories", get_repositories, raising=False
+    )
+
+    @atscached()
+    async def add_repository():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client, "add_repository", add_repository, raising=False
+    )
+
+    @atscached()
+    async def delete_repository():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client, "delete_repository", delete_repository, raising=False
+    )
+
+    @atscached()
+    async def get_projects():
+        return [mock_project]
+
+    monkeypatch.setattr(bitbucket_client, "get_projects", get_projects, raising=False)
+
+    @atscached()
+    async def get_webhook_subscriptions():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client,
+        "get_webhook_subscriptions",
+        get_webhook_subscriptions,
+        raising=False,
+    )
+
+    @atscached()
+    async def create_webhook_subscription():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client,
+        "create_webhook_subscription",
+        create_webhook_subscription,
+        raising=False,
+    )
+
+    @atscached()
+    async def delete_webhook_subscription():
+        return "mock success"
+
+    monkeypatch.setattr(
+        bitbucket_client,
+        "delete_webhook_subscription",
+        delete_webhook_subscription,
+        raising=False,
+    )
+
+    monkeypatch.setattr(
+        bitbucket_client, "cd_branches_accepted", ["test"], raising=False
+    )
