@@ -1,7 +1,9 @@
-from devops_console_rest_api.api.v1.endpoints import bitbucket, k8s
 from fastapi import APIRouter
 
-api_router = APIRouter()
+from .endpoints import bitbucket, k8s, websocket
 
-api_router.include_router(bitbucket.router, prefix="/bb", tags=["bitbucket"])
-api_router.include_router(k8s.router, prefix="/k8s", tags=["kubernetes"])
+router = APIRouter()
+
+router.include_router(bitbucket.router, prefix="/bb", tags=["bitbucket"])
+router.include_router(k8s.router, prefix="/k8s", tags=["kubernetes"])
+router.include_router(websocket.router, prefix="/ws", tags=["websocket"])
