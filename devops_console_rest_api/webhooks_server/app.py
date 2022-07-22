@@ -21,7 +21,11 @@ app = FastAPI()
 
 @app.post("/", tags=["bitbucket_webhooks"])
 async def handle_webhook_event(request: Request):
-    """Handle a webhook event."""
+    """Receive and respond to a Bitbucket webhook event.
+
+    This endpoint (ie: "/bitbucketcloud/hooks/repo") is the entry point for the
+    default devops webhook subscriptions.
+    """
 
     event_key = request.headers["X-Event-Key"]
     logging.info(f'Received webhook with event key "{event_key}"')

@@ -12,7 +12,7 @@ config = {}
 ENVIRONMENT: str = "development"
 
 API_V1_STR = "/api/v1"
-HOOKS_API_STR = "/bitbucketcloud/hooks/repo"
+WEBHOOKS_API_STR = "/bitbucketcloud/hooks/repo"
 
 WEBHOOKS_HOST = os.environ.get("WEBHOOKS_HOST")
 if WEBHOOKS_HOST is None:
@@ -21,7 +21,7 @@ if WEBHOOKS_HOST is None:
 
 WEBHOOKS_URL = urljoin(
     WEBHOOKS_HOST,
-    HOOKS_API_STR,
+    WEBHOOKS_API_STR,
 )
 
 WEBHOOKS_DEFAULT_EVENTS = [
