@@ -3,9 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Literal, Optional, TypedDict
-from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field
+from pydantic import UUID4, AnyHttpUrl, BaseModel, Extra, Field
 
 
 class BitbucketResource(BaseModel, extra=Extra.allow):
@@ -27,14 +26,14 @@ class Link(BaseModel):
 class Account(BitbucketResource):
     """An account object"""
 
-    links: Dict[str, Link]
+    links: Dict[str, Link] = {}
     username: str = Field(regex=r"^[a-zA-Z0-9_\-]+$")
-    nickname: str
+    nickname: str = ""
     account_status = "active"
-    display_name: str
-    website: str
+    display_name: str = ""
+    website: str = ""
     created_on: datetime
-    uuid: UUID
+    uuid: UUID4
     has_2fa_enabled: bool
 
 
@@ -53,7 +52,7 @@ class Participant(BitbucketResource):
 
 class Project(BitbucketResource):
     links: Dict[str, Link] = {}
-    uuid: UUID | None
+    uuid: UUID4 | None
     key: str
     owner: Account | None
     name: str | None
@@ -68,7 +67,7 @@ class BaseCommit(BitbucketResource):
     hash: str = Field(regex=r"^[0-9a-f]{7,}?$")
     date: datetime
     author: Author
-    message: str
+    message: str = ""
     summary: BitbucketResource
     parents: "List[BaseCommit]" = []
 
@@ -99,7 +98,7 @@ class Repository(BitbucketResource):
     """A Bitbucket repository"""
 
     links: Dict[str, Link]
-    uuid: UUID
+    uuid: UUID4
     full_name: str
     is_private: bool
     parent: "Optional[Repository]" = None
@@ -138,6 +137,12 @@ class RepositoryPost(BaseModel, extra=Extra.allow):
     scm = "git"
 
 
+class RepositoryPut(RepositoryPost):
+    """Payload for updating a repository"""
+
+    pass
+
+
 class PaginatedRepositories(BaseModel):
     """A paginated list of repositories"""
 
@@ -147,35 +152,6 @@ class PaginatedRepositories(BaseModel):
     next: AnyHttpUrl
     previous: AnyHttpUrl
     values: List[Repository]
-
-
-class WebhookEventKey(str, Enum):
-    issue_comment_created = "issue:comment_created"
-    issue_comment_updated = "issue:comment_updated"
-    issue_created = "issue:created"
-    issue_updated = "issue:updated"
-    pr_approved = "pullrequest:approved"
-    pr_change_request_removed = "pullrequest:changes_request_removed"
-    pr_changes_requested = "pullrequest:changes_request_created"
-    pr_comment_created = "pullrequest:comment_created"
-    pr_comment_deleted = "pullrequest:comment_deleted"
-    pr_comment_updated = "pullrequest:comment_updated"
-    pr_created = "pullrequest:created"
-    pr_declined = "pullrequest:rejected"
-    pr_merged = "pullrequest:fulfilled"
-    pr_unapproved = "pullrequest:unapproved"
-    pr_updated = "pullrequest:updated"
-    project_updated = "project:updated"
-    repo_build_created = "repo:commit_status_created"
-    repo_build_updated = "repo:commit_status_updated"
-    repo_commit_comment_created = "repo:commit_comment_created"
-    repo_created = "repo:created"
-    repo_deleted = "repo:deleted"
-    repo_forked = "repo:fork"
-    repo_imported = "repo:imported"
-    repo_push = "repo:push"
-    repo_transfer = "repo:transfer"
-    repo_updated = "repo:updated"
 
 
 BaseCommit.update_forward_refs()

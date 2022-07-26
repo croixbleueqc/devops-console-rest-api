@@ -22,9 +22,13 @@ from aiobitbucket.errors import NetworkError
 
 router = APIRouter()
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Repositories
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 @router.get("/repos")
-async def read_repos():
+async def get_repositories():
     try:
         return await client.get_repositories()
     except NetworkError as e:
@@ -32,8 +36,18 @@ async def read_repos():
         raise HTTPException(status_code=e.status, detail=e.details)
 
 
+@router.get("/repos/{uuid}", response_model=Repository)
+async def get_repository_by_uuid(uuid: UUID4):
+    return await client.get_repository(args={"uuid": uuid})
+
+
+@router.get("/repos/{name}", response_model=Repository)
+async def get_repository_by_name(name: str):
+    return await client.get_repository(repository=name)
+
+
 @router.post("/repos")
-async def create_repo(repo: RepositoryPost):
+async def create_repository(repo: RepositoryPost):
     """
     Create a new repository (if it doesn't exist) and set the webhooks.
     """
@@ -73,6 +87,16 @@ async def create_repo(repo: RepositoryPost):
         raise HTTPException(status_code=e.status, detail=e.details)
 
     return responserepo
+
+
+@router.put("/repos/{uuid}", response_model=Repository)
+async def update_repository(uuid: UUID4):
+    raise NotImplementedError
+
+
+@router.delete("/repos/{uuid}", status_code=204)
+async def delete_repository(uuid: UUID4):
+    raise NotImplementedError
 
 
 @router.get("/repos/create_default_webhooks")
@@ -200,30 +224,6 @@ async def remove_default_webhooks():
         coros.append(_remove_default_webhooks(repo))
 
     await asyncio.gather(*coros)
-
-
-@router.put("/repos/{uuid}", response_model=Repository)
-async def update_repo(uuid: UUID4):
-    pass
-
-
-@router.delete("/{repo_name}", status_code=204)
-async def delete_repo(repo_name: str):
-    try:
-        await client.delete_repository(repo_name=repo_name)
-    except NetworkError as e:
-        logging.error(f"Failed to delete repository: {e.details}")
-        raise HTTPException(status_code=e.status, detail=e.details)
-
-
-@router.get("/repos/by-uuid/{uuid}", response_model=Repository)
-async def get_repo_by_uuid(uuid: UUID4):
-    return await client.get_repository(args={"uuid": uuid})
-
-
-@router.get("/repos/by-name/{name}", response_model=Repository)
-async def get_repo_by_name(name: str):
-    return await client.get_repository(repository=name)
 
 
 # ------------------------------------------------------------------------------
