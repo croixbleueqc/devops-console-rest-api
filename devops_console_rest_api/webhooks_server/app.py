@@ -1,7 +1,6 @@
 import logging
 from http import HTTPStatus
 from devops_console_rest_api.client import bitbucket_client as client
-from devops_console_rest_api.config import config
 
 from fastapi import FastAPI, HTTPException, Request
 
@@ -22,10 +21,14 @@ app = FastAPI()
 
 @app.post("/", tags=["bitbucket_webhooks"])
 async def handle_webhook_event(request: Request):
-    """Handle a webhook event."""
+    """Receive and respond to a Bitbucket webhook event.
+
+    This endpoint (ie: "/bitbucketcloud/hooks/repo") is the entry point for the
+    default devops webhook subscriptions.
+    """
 
     event_key = request.headers["X-Event-Key"]
-    logging.info(f'Receive webhook with event key "{event_key}"')
+    logging.info(f'Received webhook with event key "{event_key}"')
 
     body = await request.json()
 
@@ -81,28 +84,35 @@ async def handle_repo_push(event: RepoPushEvent):
 
 
 def handle_commit_status_created(event: RepoBuildStatusCreated):
+    logging.info('Handling "repo:build_created" webhook event')
     pass
 
 
 def handle_build_status_updated(event: RepoBuildStatusUpdated):
+    logging.info('Handling "repo:build_updated" webhook event')
     pass
 
 
 def handle_pr_created(event: PRCreatedEvent):
+    logging.info('Handling "pr:created" webhook event')
     pass
 
 
 def handle_pr_updated(event: PRUpdatedEvent):
+    logging.info('Handling "pr:updated" webhook event')
     pass
 
 
 def handle_pr_merged(event: PRMergedEvent):
+    logging.info('Handling "pr:merged" webhook event')
     pass
 
 
 def handle_pr_approved(event: PRApprovedEvent):
+    logging.info('Handling "pr:approved" webhook event')
     pass
 
 
 def handle_pr_declined(event: PRDeclinedEvent):
+    logging.info('Handling "pr:declined" webhook event')
     pass
