@@ -1,7 +1,9 @@
-from functools import partial
-import os
+from asyncio import AbstractEventLoop
+import asyncio
+import inspect
 from typing import Any, Dict
-from .config import config
+
+# from devops_sccs.plugins.bitbucketcloud import BitbucketCloud
 
 
 class Client:
@@ -9,37 +11,51 @@ class Client:
 
 
 bitbucket_client = Client()
-vault_bitbucket: Dict[str, Any] = config.get("vault_bitbucket", [])
-
-plugin_id = "cbq"
-admin_session = {
-    "user": vault_bitbucket["username"],
-    "apikey": vault_bitbucket["app_passwords"]["bitbucket_management"],
-    "team": "croixbleue",
-    "author": vault_bitbucket["email"],
-}
 
 # TODO remove need for this; it's an ugly hack to avoid having to refactor the
 #      whole plugin architecture in order to avoid circular imports
-def setup_bb_client(core_sccs) -> None:
+def setup_bb_client(config: Dict[str, Any], core_sccs, loop: AbstractEventLoop) -> None:
+    """
+    Recreate the Bitbucket client with curried methods run in the parent thread.
+    """
+
+    vault_bitbucket: Dict[str, Any] = config.get("vault_bitbucket", {})
+
+    if len(vault_bitbucket) == 0:
+        raise Exception("vault_bitbucket not found in config")
+
+    plugin_id = "cbq"
+    admin_session = {
+        "user": vault_bitbucket["username"],
+        "apikey": vault_bitbucket["app_passwords"]["bitbucket_management"],
+        "team": "croixbleue",
+        "author": vault_bitbucket["email"],
+    }
+
     global bitbucket_client
 
-    # set verbatim methods
-    setattr(bitbucket_client, "__init__", getattr(core_sccs, "__init__"))
-    setattr(bitbucket_client, "init", getattr(core_sccs, "init"))
+    def threadsafe_async_partial(f, loop):
+        def async_partial(*args, **kwargs):
+            async def g():
+                return f(*args, plugin_id=plugin_id, session=admin_session, **kwargs)
 
-    # set curried methods
-    for method in [m for m in dir(core_sccs) if callable(getattr(core_sccs, m))]:
-        if method.startswith("_") or method == "init":
+            future = asyncio.run_coroutine_threadsafe(g(), loop)
+            return future.result(60)
+
+        return async_partial
+
+    for name, member in inspect.getmembers(core_sccs):
+        if name.startswith("_"):
             continue
-        p = partial(
-            getattr(core_sccs, method), plugin_id=plugin_id, session=admin_session
-        )
+        if inspect.ismethod(member) or inspect.isfunction(member):
+            f = threadsafe_async_partial(
+                member,
+                loop=loop,
+            )
+            setattr(bitbucket_client, name, f)
+        # copy over properties from the core sccs client
+        else:
+            setattr(bitbucket_client, name, member)
 
-        setattr(bitbucket_client, str(method), p)
-
-    # set properties
-    for prop in [p for p in dir(core_sccs) if not callable(getattr(core_sccs, p))]:
-        if prop.startswith("_"):
-            continue
-        setattr(bitbucket_client, str(prop), getattr(core_sccs, prop))
+    # let's keep a reference to the event loop so that we can batch api calls later on
+    setattr(bitbucket_client, "loop", loop)

@@ -2,48 +2,50 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal
-from uuid import UUID
+from typing import Dict, Generic, List, Literal, Optional, Type, TypeVar, TypedDict
 
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field
+from pydantic.generics import GenericModel
+
+from pydantic import UUID4, AnyHttpUrl, BaseModel, Extra, Field
 
 
 class BitbucketResource(BaseModel, extra=Extra.allow):
     """Base type for most resource objects. It defines the common type element that identifies an object's type"""
 
-    type: str
+    type: str = ""
 
 
-class User(BaseModel, extra=Extra.allow):
+class User(BaseModel):
     is_staff: bool
     account_id: str
 
 
 class Link(BaseModel):
-    name: str
+    name: str | None
     href: AnyHttpUrl
 
 
-class Account(BitbucketResource, extra=Extra.allow):
+class Account(BitbucketResource):
     """An account object"""
 
-    links: Dict[str, Link]
+    links: Dict[str, Link] = {}
     username: str = Field(regex=r"^[a-zA-Z0-9_\-]+$")
-    nickname: str
+
+    nickname: str = ""
     account_status = "active"
-    display_name: str
-    website: str
+    display_name: str = ""
+    website: str = ""
     created_on: datetime
-    uuid: UUID
+    uuid: UUID4
     has_2fa_enabled: bool
 
 
-class Author(BitbucketResource, extra=Extra.allow):
+class Author(BitbucketResource):
     raw: str
     user: Account
 
 
-class Participant(BitbucketResource, extra=Extra.allow):
+class Participant(BitbucketResource):
     user: Account | User
     role: Literal["PARTICIPANT", "REVIEWER"]
     approved: bool
@@ -51,34 +53,34 @@ class Participant(BitbucketResource, extra=Extra.allow):
     participated_on: datetime
 
 
-class Project(BitbucketResource, extra=Extra.allow):
-    links: Dict[str, Link]
-    uuid: UUID
+class Project(BitbucketResource):
+    links: Dict[str, Link] = {}
+    uuid: UUID4 | None
     key: str
-    owner: Account
-    name: str
-    description: str
-    is_private: bool
-    created_on: datetime
-    updated_on: datetime
-    has_publicly_visible_repos: bool
+    owner: Account | None
+    name: str | None
+    description: str = ""
+    is_private: bool = True
+    created_on: datetime | None
+    updated_on: datetime | None
+    has_publicly_visible_repos: bool = False
 
 
-class BaseCommit(BitbucketResource, extra=Extra.allow):
+class BaseCommit(BitbucketResource):
     hash: str = Field(regex=r"^[0-9a-f]{7,}?$")
     date: datetime
     author: Author
-    message: str
+    message: str = ""
     summary: BitbucketResource
-    parents: List[BaseCommit] = []
+    parents: "List[BaseCommit]" = []
 
 
-class Commit(BitbucketResource, extra=Extra.allow):
-    repository: Repository
+class Commit(BitbucketResource):
+    repository: "Repository"
     participants: List[Participant] = []
 
 
-class Ref(BitbucketResource, extra=Extra.allow):
+class Ref(BitbucketResource):
     links: Dict[str, Link] = {}
     name: str
     target: BaseCommit | Commit
@@ -90,19 +92,19 @@ class MergeStrategy(str, Enum):
     fast_forward = "fast_forward"
 
 
-class Branch(BitbucketResource, extra=Extra.allow):
+class Branch(BitbucketResource):
     merge_strategies: List[MergeStrategy] = []
     default_merge_strategy: MergeStrategy
 
 
-class Repository(BitbucketResource, extra=Extra.allow):
+class Repository(BitbucketResource):
     """A Bitbucket repository"""
 
     links: Dict[str, Link]
-    uuid: UUID
+    uuid: UUID4
     full_name: str
     is_private: bool
-    parent: Repository | None = None
+    parent: "Optional[Repository]" = None
     scm = "git"
     owner: Account
     name: str
@@ -117,6 +119,47 @@ class Repository(BitbucketResource, extra=Extra.allow):
     mainbranch: Ref | Branch
 
 
+class ProjectValue(TypedDict):
+    name: str
+    key: str
+
+
+class ConfigOrPrivilegeValue(TypedDict):
+    short: str
+    key: str
+
+
+class RepositoryPost(BaseModel, extra=Extra.allow):
+    """Payload for creating a repository"""
+
+    name: str
+    description: str = ""
+    project: ProjectValue
+    configuration: ConfigOrPrivilegeValue
+    privileges: ConfigOrPrivilegeValue
+    scm = "git"
+
+
+R = TypeVar("R", bound=BitbucketResource)
+
+
+class Paginated(GenericModel, Generic[R]):
+    """A paginated object"""
+
+    size: int
+    page: int
+    pagelen: int
+    next: Optional[AnyHttpUrl]
+    previous: Optional[AnyHttpUrl]
+    values: List[R]
+
+
+class RepositoryPut(RepositoryPost):
+    """Payload for updating a repository"""
+
+    pass
+
+
 class PaginatedRepositories(BaseModel):
     """A paginated list of repositories"""
 
@@ -128,30 +171,6 @@ class PaginatedRepositories(BaseModel):
     values: List[Repository]
 
 
-class WebhookEventKey(str, Enum):
-    issue_comment_created = "issue:comment_created"
-    issue_comment_updated = "issue:comment_updated"
-    issue_created = "issue:created"
-    issue_updated = "issue:updated"
-    pr_approved = "pullrequest:approved"
-    pr_change_request_removed = "pullrequest:changes_request_removed"
-    pr_changes_requested = "pullrequest:changes_request_created"
-    pr_comment_created = "pullrequest:comment_created"
-    pr_comment_deleted = "pullrequest:comment_deleted"
-    pr_comment_updated = "pullrequest:comment_updated"
-    pr_created = "pullrequest:created"
-    pr_declined = "pullrequest:rejected"
-    pr_merged = "pullrequest:fulfilled"
-    pr_unapproved = "pullrequest:unapproved"
-    pr_updated = "pullrequest:updated"
-    project_updated = "project:updated"
-    repo_build_created = "repo:commit_status_created"
-    repo_build_updated = "repo:commit_status_updated"
-    repo_commit_comment_created = "repo:commit_comment_created"
-    repo_created = "repo:created"
-    repo_deleted = "repo:deleted"
-    repo_forked = "repo:fork"
-    repo_imported = "repo:imported"
-    repo_push = "repo:push"
-    repo_transfer = "repo:transfer"
-    repo_updated = "repo:updated"
+BaseCommit.update_forward_refs()
+Commit.update_forward_refs()
+Repository.update_forward_refs()
