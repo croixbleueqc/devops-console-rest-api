@@ -13,6 +13,7 @@ from devops_console_rest_api.config import (
 )
 
 from devops_console_rest_api.models.bitbucket import (
+    Paginated,
     Project,
     Repository,
     RepositoryPost,
@@ -231,7 +232,7 @@ async def remove_default_webhooks():
 # ------------------------------------------------------------------------------
 
 
-@router.get("/projects", response_model=List[Project])
+@router.get("/projects", response_model=Paginated[Project])
 async def get_projects():
     try:
         return await client.get_projects()
