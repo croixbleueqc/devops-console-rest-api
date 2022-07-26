@@ -3,6 +3,8 @@ import asyncio
 import inspect
 from typing import Any, Dict
 
+# from devops_sccs.plugins.bitbucketcloud import BitbucketCloud
+
 
 class Client:
     pass
@@ -43,6 +45,8 @@ def setup_bb_client(config: Dict[str, Any], core_sccs, loop: AbstractEventLoop) 
         return async_partial
 
     for name, member in inspect.getmembers(core_sccs):
+        if name.startswith("_"):
+            continue
         if inspect.ismethod(member) or inspect.isfunction(member):
             f = threadsafe_async_partial(
                 member,
@@ -51,8 +55,7 @@ def setup_bb_client(config: Dict[str, Any], core_sccs, loop: AbstractEventLoop) 
             setattr(bitbucket_client, name, f)
         # copy over properties from the core sccs client
         else:
-            if not name.startswith("_"):
-                setattr(bitbucket_client, name, member)
+            setattr(bitbucket_client, name, member)
 
     # let's keep a reference to the event loop so that we can batch api calls later on
     setattr(bitbucket_client, "loop", loop)
