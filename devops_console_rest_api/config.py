@@ -4,7 +4,7 @@ import os
 import sys
 from urllib.parse import urljoin
 
-from .models.bitbucket import WebhookEventKey
+from .models.webhooks import WebhookEventKey
 
 
 config = {}
