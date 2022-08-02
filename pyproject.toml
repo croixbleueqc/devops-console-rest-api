@@ -7,7 +7,6 @@ authors = ["Nicolas Epstein <nicolas.epstein@qc.croixbleue.ca>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = {extras = ["all"], version = "^0.75.2"}
-uvicorn = "^0.17.6"
 pydantic = "^1.9.0"
 pytest = "^7.1.2"
 requests = "^2.27.1"

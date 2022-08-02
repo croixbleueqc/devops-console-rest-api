@@ -1,7 +1,5 @@
 import logging
-import os
 
-import uvicorn
 from fastapi import FastAPI
 
 from .api.v1.router import router
@@ -12,9 +10,12 @@ from .webhooks_server.app import app as webhooks_server
 app = FastAPI()
 
 
-def init_app(config, core_sccs, loop) -> None:
+def init_app(cfg, core_sccs, loop):
     """Initialize the FastAPI server."""
+    global config
     global app
+
+    config = cfg
 
     setup_bb_client(config=config, core_sccs=core_sccs, loop=loop)
 
@@ -27,6 +28,8 @@ def init_app(config, core_sccs, loop) -> None:
 
     logging.debug("FastAPI Server initialized")
 
+    return app
+
 
 def mount_webhooks_server(app: FastAPI):
     # The hook api runs in its own "subapp"; this means it has a separate api with
@@ -38,26 +41,23 @@ def mount_webhooks_server(app: FastAPI):
     logging.debug("Mounted webhooks server")
 
 
-async def run(cfg, core_sccs, loop):
-    """Run the FastAPI server."""
+# def run(cfg, core_sccs, loop) -> None:
+#     """Run the FastAPI server."""
 
-    global app
-    global config
+#     global app
+#     global config
 
-    config = cfg
+#     config = cfg
 
-    init_app(config=config, core_sccs=core_sccs, loop=loop)
+#     init_app(config=config, core_sccs=core_sccs, loop=loop)
 
-    config = uvicorn.Config(
-        app="devops_console_rest_api:main.app",
-        host=config["sccs"]["hook_server"]["host"],
-        port=int(config["sccs"]["hook_server"]["port"]),
-        log_level=str(os.environ.get("LOGGING_LEVEL", "debug")),
-        reload=False,
-    )
-    server = uvicorn.Server(config)
-
-    try:
-        await server.serve()
-    except RuntimeError:
-        logging.debug("FastAPI Server has stopped")
+#     try:
+#         uvicorn.run(
+#             app="devops_console_rest_api:main.app",
+#             host=config["sccs"]["hook_server"]["host"],
+#             port=int(config["sccs"]["hook_server"]["port"]),
+#             log_level=str(os.environ.get("LOGGING_LEVEL", "debug")),
+#             reload=False,
+#         )
+#     except RuntimeError:
+#         logging.debug("FastAPI Server has stopped")
