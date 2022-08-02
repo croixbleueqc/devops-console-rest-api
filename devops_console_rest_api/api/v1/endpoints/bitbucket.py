@@ -1,25 +1,18 @@
 import asyncio
 import logging
-from typing import List
 
+from aiobitbucket.errors import NetworkError
 from fastapi import APIRouter, HTTPException
 from pydantic import UUID4
 
-from devops_console_rest_api.client import bitbucket_client as client
-from devops_console_rest_api.config import (
+from ....client import bitbucket_client as client
+from ....config import (
     WEBHOOKS_DEFAULT_DESCRIPTION,
     WEBHOOKS_DEFAULT_EVENTS,
     WEBHOOKS_URL,
 )
-
-from devops_console_rest_api.models.bitbucket import (
-    Paginated,
-    Project,
-    Repository,
-    RepositoryPost,
-)
-from devops_console_rest_api.models.webhooks import WebhookSubscription
-from aiobitbucket.errors import NetworkError
+from ....models.bitbucket import Paginated, Project, Repository, RepositoryPost
+from ....models.webhooks import WebhookSubscription
 
 router = APIRouter()
 

@@ -1,11 +1,10 @@
 import logging
 from http import HTTPStatus
-from devops_console_rest_api.client import bitbucket_client as client
 
 from fastapi import FastAPI, HTTPException, Request
 from requests import JSONDecodeError
 
-from ..models.webhooks import WebhookEventKey
+from ..client import bitbucket_client as client
 from ..models.webhooks import (
     PRApprovedEvent,
     PRCreatedEvent,
@@ -15,6 +14,7 @@ from ..models.webhooks import (
     RepoBuildStatusCreated,
     RepoBuildStatusUpdated,
     RepoPushEvent,
+    WebhookEventKey,
 )
 
 app = FastAPI()
