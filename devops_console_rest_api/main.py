@@ -38,7 +38,7 @@ def mount_webhooks_server(app: FastAPI):
     logging.debug("Mounted webhooks server")
 
 
-async def run(cfg, core_sccs, loop):
+def run(cfg, core_sccs, loop) -> None:
     """Run the FastAPI server."""
 
     global app
@@ -48,16 +48,13 @@ async def run(cfg, core_sccs, loop):
 
     init_app(config=config, core_sccs=core_sccs, loop=loop)
 
-    config = uvicorn.Config(
-        app="devops_console_rest_api:main.app",
-        host=config["sccs"]["hook_server"]["host"],
-        port=int(config["sccs"]["hook_server"]["port"]),
-        log_level=str(os.environ.get("LOGGING_LEVEL", "debug")),
-        reload=False,
-    )
-    server = uvicorn.Server(config)
-
     try:
-        await server.serve()
+        uvicorn.run(
+            app="devops_console_rest_api:main.app",
+            host=config["sccs"]["hook_server"]["host"],
+            port=int(config["sccs"]["hook_server"]["port"]),
+            log_level=str(os.environ.get("LOGGING_LEVEL", "debug")),
+            reload=False,
+        )
     except RuntimeError:
         logging.debug("FastAPI Server has stopped")
